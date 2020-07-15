@@ -2,9 +2,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 from cell import *
 
-class Not_darts_yet(nn.Module):
+class Darts(nn.Module):
     def __init__(self,C,num_classes,num_layers):
-        super(Not_darts_yet, self).__init__()
+        super(Darts, self).__init__()
+
+        normal_param = [nn.Parameter(torch.Tensor(i+2,8)) for i in range(4)]
+        reduc_param = [nn.Parameter(torch.Tensor(i+2,8)) for i in range(4)]
+        self.arch_param_normal = nn.ParameterList(normal_param)
+        self.arch_param_reduc = nn.ParameterList(reduc_param)
+
+        # print(self.arch_param_normal)
         multi = 3
         C_curr = 3*C
 
@@ -35,7 +42,10 @@ class Not_darts_yet(nn.Module):
 
         x_pp, x_p = x,x
         for layer in self.layers:
-            x = layer(x_pp,x_p)
+            if isinstance(layer,NormalCell):
+                x = layer(x_pp,x_p,self.arch_param_normal)
+            else:
+                x = layer(x_pp,x_p,self.arch_param_reduc)
             x_pp,x_p = x_p,x
 
         x = self.gap(x)
