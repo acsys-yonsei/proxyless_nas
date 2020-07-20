@@ -11,8 +11,8 @@ class MixedOp(nn.Module):
         for op in ops:
             self.ops.append(OPS[op](C_in,C_out,stride))
 
-        self.AP_path_alpha = Parameter(torch.Tensor(len(ops)))
-        self.AP_path_wb = Parameter(torch.Tensor(len(ops)))
+        self.AP_path_alpha = nn.Parameter(torch.Tensor(len(ops)))
+        self.AP_path_wb = nn.Parameter(torch.Tensor(len(ops)))
 
         self.active_index = [0]
         self.inactive_index = None
@@ -31,7 +31,7 @@ class MixedOp(nn.Module):
                             out_i = op(_x.data)
                         else:
                             out_i = _output.data
-                        grad_i = torch.sum(out_k*grad_output)
+                        grad_i = torch.sum(out_i*grad_output)
                         binary_grads[i] = grad_i
                 return binary_grads
             return backward
@@ -71,12 +71,12 @@ class MixedOp(nn.Module):
         probs = F.softmax(self.AP_path_alpha,dim=0)
         for i in range(len(self.ops)):
             for j in range(len(self.ops)):
-                self.AP_path_alpha.grad.data[i] += binary_grads[j]*probs[j]*(delta(i,j)-probs[i])
+                self.AP_path_alpha.grad.data[i] += binary_grads[j]*probs[j]*(self.delta(i,j)-probs[i])
         
 
 class Cell(nn.Module):
     def __init__(self,C_in,C_out,stride):
-        super(NormalCell,self).__init__()
+        super(Cell,self).__init__()
         self.C_out = C_out
         self.C_in = C_in
 
@@ -97,7 +97,7 @@ class Cell(nn.Module):
 
 
     def forward(self,x):
-        if shortcut:
+        if self.shortcut:
             skip = x
         else:
             skip = 0

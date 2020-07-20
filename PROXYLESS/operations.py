@@ -22,13 +22,13 @@ class MBConv(nn.Module):
         padding = kernel_size//2
 
         self.op = nn.Sequential(
-            nn.Conv2d(C_in,hidden_dim,1,1,0,bias=False)
-            nn.BatchNorm2d(hidden_dim)
+            nn.Conv2d(C_in,hidden_dim,1,1,0,bias=False),
+            nn.BatchNorm2d(hidden_dim),
             nn.ReLU6(),
-            nn.Conv2d(hidden_dim,hidden_dim,kernel_size,stride,padding,groups=hidden_dim,bias=False)
-            nn.BatchNorm2d(hidden_dim)
-            nn.ReLU6()
-            nn.Conv2d(hidden_dim,C_out,1,1,0,bias=False)
+            nn.Conv2d(hidden_dim,hidden_dim,kernel_size,stride,padding,groups=hidden_dim,bias=False),
+            nn.BatchNorm2d(hidden_dim),
+            nn.ReLU6(),
+            nn.Conv2d(hidden_dim,C_out,1,1,0,bias=False),
             nn.BatchNorm2d(C_out)
 
         )

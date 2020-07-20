@@ -15,7 +15,7 @@ class Proxyless(nn.Module):
 
         self.extractor = nn.Sequential(
             nn.Conv2d(3,8,3,padding=1,bias=False),
-            nn.BatchNorm2d(8)
+            nn.BatchNorm2d(8),
             nn.ReLU6()
         )
         C = 8
@@ -30,7 +30,7 @@ class Proxyless(nn.Module):
                     self.layers.append(Cell(C,C,1))
         
         self.gap = nn.AdaptiveAvgPool2d(1)
-        self.classifier = nn.Linear(C_p, num_classes)
+        self.classifier = nn.Linear(C, num_classes)
 
     def forward(self, x):
         x = self.extractor(x)
