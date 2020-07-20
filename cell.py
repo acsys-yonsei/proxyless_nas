@@ -4,17 +4,12 @@ import torch.nn.functional as F
 from operations import *
 
 class MixedOp(nn.Module):
-    def __init__(self,C,stride):
+    def __init__(self,C,stride,ops):
         super(MixedOp,self).__init__()
 
-        self.ops = nn.ModuleList([SepConv(C,C,3,stride,1),
-                                SepConv(C,C,5,stride,2),
-                                DilConv(C, C, 3, stride, 2, 2),
-                                DilConv(C, C, 5, stride, 4, 2),
-                                nn.MaxPool2d(3, stride=stride, padding=1),
-                                nn.AvgPool2d(3, stride=stride, padding=1),
-                                Identity() if stride == 1 else FactorizedReduce(C, C),
-                                Zero(stride)])
+        self.ops = nn.ModuleList()
+        for op in ops:
+            self.ops.append(OPS[op](C,stride,True))
         
     def forward(self,x,arch):
         probs = F.softmax(arch,dim=0)
@@ -25,7 +20,7 @@ class MixedOp(nn.Module):
         return output
 
 class NormalCell(nn.Module):
-    def __init__(self,C_pp,C_p,C,prev_reduction=False):
+    def __init__(self,C_pp,C_p,C,ops,prev_reduction=False):
         super(NormalCell,self).__init__()
         self.C_out = C
 
@@ -37,7 +32,7 @@ class NormalCell(nn.Module):
             self.preproc_pp = ReLUConvBN(C_pp,partial_C,1,1,0)
         self.preproc_p = ReLUConvBN(C_p,partial_C,1,1,0)
 
-        self.ops = nn.ModuleList([nn.ModuleList([MixedOp(partial_C,1) for j in range(i+2)]) for i in range(4)])
+        self.ops = nn.ModuleList([nn.ModuleList([MixedOp(partial_C,1,ops) for j in range(i+2)]) for i in range(4)])
 
     def forward(self,x_pp,x_p,arch_param):
         x_pp = self.preproc_pp(x_pp)
@@ -54,7 +49,7 @@ class NormalCell(nn.Module):
         return torch.cat(fmap[2:],dim=1)
 
 class ReductionCell(nn.Module):
-    def __init__(self,C_pp,C_p,C):
+    def __init__(self,C_pp,C_p,C,ops):
         super(ReductionCell,self).__init__()
         self.C_out = C
 
@@ -68,9 +63,9 @@ class ReductionCell(nn.Module):
             self.ops.append(nn.ModuleList())
             for j in range(i+2):
                 if j<2:
-                    self.ops[i].append(MixedOp(partial_C,2))
+                    self.ops[i].append(MixedOp(partial_C,2,ops))
                 else:
-                    self.ops[i].append(MixedOp(partial_C,1))
+                    self.ops[i].append(MixedOp(partial_C,1,ops))
                 
         # print(self.ops)
 

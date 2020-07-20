@@ -6,6 +6,17 @@ class Darts(nn.Module):
     def __init__(self,C,num_classes,num_layers):
         super(Darts, self).__init__()
 
+        OPS = [
+            'none',
+            'max_pool_3x3',
+            'avg_pool_3x3',
+            'skip_connect',
+            'sep_conv_3x3',
+            'sep_conv_5x5',
+            'dil_conv_3x3',
+            'dil_conv_5x5'
+        ]
+
         normal_param = [nn.Parameter(torch.Tensor(i+2,8)) for i in range(4)]
         reduc_param = [nn.Parameter(torch.Tensor(i+2,8)) for i in range(4)]
         self.arch_param_normal = nn.ParameterList(normal_param)
@@ -27,9 +38,9 @@ class Darts(nn.Module):
             if i == num_layers//3 or i == 2*num_layers//3:
                 C_curr*=2
                 reduction = True
-                layer = ReductionCell(C_pp,C_p,C_curr)
+                layer = ReductionCell(C_pp,C_p,C_curr,OPS)
             else:
-                layer = NormalCell(C_pp,C_p,C_curr,reduction)
+                layer = NormalCell(C_pp,C_p,C_curr,OPS,reduction)
                 reduction = False
             self.layers.append(layer)
             C_pp,C_p = C_p,C_curr
